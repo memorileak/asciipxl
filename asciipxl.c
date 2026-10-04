@@ -49,11 +49,7 @@ asciipxl_art* asciipxl_render(size_t const in_width, size_t const in_height,
     out_height += 1;
   }
 
-  art->width = out_width;
-  art->height = out_height;
-
   size_t length = out_width * out_height;
-  art->length = length;
   art->body = malloc(length);
   if (!art->body) {
     asciipxl_free(art);
@@ -87,6 +83,10 @@ asciipxl_art* asciipxl_render(size_t const in_width, size_t const in_height,
       art->body[p] = asciipxl_scale[asciipxl_idx];
     }
   }
+
+  art->width = out_width;
+  art->height = out_height;
+  art->length = length;
 
   return art;
 }

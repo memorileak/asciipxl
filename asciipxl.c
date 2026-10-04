@@ -14,38 +14,67 @@ struct ascii_art {
 typedef struct ascii_art ascii_art;
 
 ascii_art* ascii_render(size_t const in_width, size_t const in_height,
-                        size_t const out_width,
+                        size_t const desired_out_width,
                         unsigned char const* const pixels) {
   static char constexpr ascii_scale[] = " .,-~:;=!*#$@";
   static size_t constexpr ascii_scale_len = sizeof(ascii_scale) - 1;
 
-  size_t out_height = out_width * in_height / in_width;
+  if (desired_out_width == 0) {
+    return nullptr;
+  }
+
+  size_t out_width = desired_out_width;
+  size_t w_group_size = in_width / out_width;
+  if (in_width % out_width > 0) {
+    out_width += 1;
+  }
+
+  size_t out_height = desired_out_width * in_height / in_width;
+  size_t h_group_size = in_height / out_height;
+  if (in_height % out_height > 0) {
+    out_height += 1;
+  }
+
   size_t length = out_width * out_height;
-  size_t w_group_size = (in_width + out_width - 1) / out_width;
-  size_t h_group_size = (in_height + out_height - 1) / out_height;
-
   char* body = malloc(length);
-  size_t position = 0;
+  if (!body) {
+    return nullptr;
+  }
 
-  for (size_t j = 0; j < in_height; j += h_group_size) {
-    for (size_t i = 0; i < in_width; i += w_group_size) {
+  for (size_t j = 0; j < out_height; ++j) {
+    for (size_t i = 0; i < out_width; ++i) {
+      size_t p = j * out_width + i;
       size_t s = 0;
       size_t n = 0;
-      for (size_t j0 = j; j0 < in_height && j0 < j + h_group_size; ++j0) {
-        for (size_t i0 = i; i0 < in_width && i0 < i + w_group_size; ++i0) {
-          size_t pixel_idx = j0 * in_width + i0;
+
+      for (size_t j0 = 0; j0 < h_group_size; ++j0) {
+        for (size_t i0 = 0; i0 < w_group_size; ++i0) {
+          size_t pixel_j = (j * h_group_size + j0);
+          if (pixel_j >= in_height) {
+            continue;
+          }
+          size_t pixel_i = (i * w_group_size + i0);
+          if (pixel_i >= in_width) {
+            continue;
+          }
+          size_t pixel_idx = pixel_j * in_width + pixel_i;
           s += (size_t)pixels[pixel_idx];
           ++n;
         }
       }
-      size_t avg = s / n;
+
+      size_t avg = (n == 0 ? 0 : (s / n));
       size_t ascii_idx = (ascii_scale_len - 1) * avg / 255;
-      body[position] = ascii_scale[ascii_idx];
-      ++position;
+      body[p] = ascii_scale[ascii_idx];
     }
   }
 
   ascii_art* art = malloc(sizeof(ascii_art));
+  if (!art) {
+    free(body);
+    return nullptr;
+  }
+
   art->width = out_width;
   art->height = out_height;
   art->length = length;
@@ -67,22 +96,22 @@ void ascii_draw(ascii_art const* art) {
 
 int main(int argc, char* argv[argc + 1]) {
   if (argc < 2) {
-    printf("Usage: asciipxl path/to/img.jpg [out_width]\n");
+    printf("Usage: asciipxl path/to/img.jpg [desired_out_width]\n");
     return EXIT_SUCCESS;
   }
 
   char* const imgpath = argv[1];
-  size_t out_width = 32;
+  size_t desired_out_width = 32;
 
   if (argc > 2) {
     // long int strtol(const char *nptr, char **endptr, int base);
     char* endptr = nullptr;
     long w = strtol(argv[2], &endptr, 10);
     if (*endptr) {
-      printf("Error: parsing out_width at %c\n", *endptr);
+      printf("Error: parsing desired_out_width at %c\n", *endptr);
       return EXIT_FAILURE;
     }
-    out_width = (size_t)w;
+    desired_out_width = (size_t)w;
   }
 
   int width = 0;
@@ -90,18 +119,22 @@ int main(int argc, char* argv[argc + 1]) {
   int channels = 0;
 
   unsigned char* pixels = stbi_load(imgpath, &width, &height, &channels, 1);
-
-  if (out_width > width) {
-    out_width = width;
+  if (!pixels) {
+    printf("Error: failed to load image %s\n", imgpath);
+    return EXIT_FAILURE;
   }
 
-  // Cap at 50
-  if (out_width > 50) {
-    out_width = 50;
+  if (desired_out_width > width) {
+    desired_out_width = width;
   }
 
   ascii_art* art =
-      ascii_render((size_t)width, (size_t)height, out_width, pixels);
+      ascii_render((size_t)width, (size_t)height, desired_out_width, pixels);
+  if (!art) {
+    printf("Error: failed to render ascii art\n");
+    stbi_image_free(pixels);
+    return EXIT_FAILURE;
+  }
 
   printf("%dx%d -> %zux%zu\n", width, height, art->width, art->height);
   ascii_draw(art);

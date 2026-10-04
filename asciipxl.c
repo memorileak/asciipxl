@@ -32,13 +32,13 @@ asciipxl_art* asciipxl_render(size_t const in_width, size_t const in_height,
     return nullptr;
   }
 
-  asciipxl_art* art = malloc(sizeof(asciipxl_art));
+  asciipxl_art* art = calloc(1, sizeof(asciipxl_art));
   if (!art) {
     return nullptr;
   }
 
   size_t out_width = desired_out_width;
-  size_t w_group_size = in_width / out_width;
+  size_t w_group_size = in_width / desired_out_width;
   if (in_width % out_width > 0) {
     out_width += 1;
   }
@@ -50,8 +50,8 @@ asciipxl_art* asciipxl_render(size_t const in_width, size_t const in_height,
   }
 
   size_t length = out_width * out_height;
-  art->body = malloc(length);
-  if (!art->body) {
+  char* body = malloc(length);
+  if (!body) {
     asciipxl_free(art);
     return nullptr;
   }
@@ -80,13 +80,14 @@ asciipxl_art* asciipxl_render(size_t const in_width, size_t const in_height,
 
       size_t avg = (n == 0 ? 0 : (s / n));
       size_t asciipxl_idx = (asciipxl_scale_len - 1) * avg / 255;
-      art->body[p] = asciipxl_scale[asciipxl_idx];
+      body[p] = asciipxl_scale[asciipxl_idx];
     }
   }
 
   art->width = out_width;
   art->height = out_height;
   art->length = length;
+  art->body = body;
 
   return art;
 }

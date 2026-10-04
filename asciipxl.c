@@ -38,15 +38,23 @@ asciipxl_art* asciipxl_render(size_t const in_width, size_t const in_height,
   }
 
   size_t out_width = desired_out_width;
-  size_t w_group_size = in_width / desired_out_width;
+  size_t w_group_size = in_width / out_width;
   if (in_width % out_width > 0) {
-    out_width += 1;
+    out_width -= 1;
+    w_group_size = in_width / out_width;
+    if (in_width % out_width > 0) {
+      out_width += 1;
+    }
   }
 
   size_t out_height = desired_out_width * in_height / in_width;
   size_t h_group_size = in_height / out_height;
   if (in_height % out_height > 0) {
-    out_height += 1;
+    out_height -= 1;
+    h_group_size = in_height / out_height;
+    if (in_height % out_height > 0) {
+      out_height += 1;
+    }
   }
 
   size_t length = out_width * out_height;

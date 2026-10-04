@@ -4,22 +4,36 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-struct ascii_art {
+struct asciipxl_art {
   size_t width;
   size_t height;
   size_t length;
   char* body;
 };
 
-typedef struct ascii_art ascii_art;
+typedef struct asciipxl_art asciipxl_art;
 
-ascii_art* ascii_render(size_t const in_width, size_t const in_height,
-                        size_t const desired_out_width,
-                        unsigned char const* const pixels) {
-  static char constexpr ascii_scale[] = " .,-~:;=!*#$@";
-  static size_t constexpr ascii_scale_len = sizeof(ascii_scale) - 1;
+void asciipxl_free(asciipxl_art* art) {
+  if (art) {
+    if (art->body) {
+      free(art->body);
+    }
+    free(art);
+  }
+}
+
+asciipxl_art* asciipxl_render(size_t const in_width, size_t const in_height,
+                              size_t const desired_out_width,
+                              unsigned char const* const pixels) {
+  static char constexpr asciipxl_scale[] = " .,-~:;=!*#$@";
+  static size_t constexpr asciipxl_scale_len = sizeof(asciipxl_scale) - 1;
 
   if (desired_out_width == 0) {
+    return nullptr;
+  }
+
+  asciipxl_art* art = malloc(sizeof(asciipxl_art));
+  if (!art) {
     return nullptr;
   }
 
@@ -35,9 +49,14 @@ ascii_art* ascii_render(size_t const in_width, size_t const in_height,
     out_height += 1;
   }
 
+  art->width = out_width;
+  art->height = out_height;
+
   size_t length = out_width * out_height;
-  char* body = malloc(length);
-  if (!body) {
+  art->length = length;
+  art->body = malloc(length);
+  if (!art->body) {
+    asciipxl_free(art);
     return nullptr;
   }
 
@@ -64,26 +83,15 @@ ascii_art* ascii_render(size_t const in_width, size_t const in_height,
       }
 
       size_t avg = (n == 0 ? 0 : (s / n));
-      size_t ascii_idx = (ascii_scale_len - 1) * avg / 255;
-      body[p] = ascii_scale[ascii_idx];
+      size_t asciipxl_idx = (asciipxl_scale_len - 1) * avg / 255;
+      art->body[p] = asciipxl_scale[asciipxl_idx];
     }
   }
-
-  ascii_art* art = malloc(sizeof(ascii_art));
-  if (!art) {
-    free(body);
-    return nullptr;
-  }
-
-  art->width = out_width;
-  art->height = out_height;
-  art->length = length;
-  art->body = body;
 
   return art;
 }
 
-void ascii_draw(ascii_art const* art) {
+void asciipxl_draw(asciipxl_art const* art) {
   for (size_t j = 0; j < art->height; ++j) {
     for (size_t i = 0; i < art->width; ++i) {
       size_t idx = j * art->width + i;
@@ -128,8 +136,8 @@ int main(int argc, char* argv[argc + 1]) {
     desired_out_width = width;
   }
 
-  ascii_art* art =
-      ascii_render((size_t)width, (size_t)height, desired_out_width, pixels);
+  asciipxl_art* art =
+      asciipxl_render((size_t)width, (size_t)height, desired_out_width, pixels);
   if (!art) {
     printf("Error: failed to render ascii art\n");
     stbi_image_free(pixels);
@@ -137,10 +145,10 @@ int main(int argc, char* argv[argc + 1]) {
   }
 
   printf("%dx%d -> %zux%zu\n", width, height, art->width, art->height);
-  ascii_draw(art);
+  asciipxl_draw(art);
 
   stbi_image_free(pixels);
-  free(art);
+  asciipxl_free(art);
 
   return EXIT_SUCCESS;
 }

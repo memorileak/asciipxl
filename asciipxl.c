@@ -25,8 +25,8 @@ void asciipxl_free(asciipxl_art* art) {
 asciipxl_art* asciipxl_render(size_t const in_width, size_t const in_height,
                               size_t const desired_out_width,
                               unsigned char const* const pixels) {
-  // static char constexpr asciipxl_scale[] = " .,-~:;=!*#$@";
-  static char constexpr asciipxl_scale[] = "@$#*!=;:~-,. ";
+  static char constexpr asciipxl_scale[] = " .,-~:;=!*#$@";
+  // static char constexpr asciipxl_scale[] = "@$#*!=;:~-,. ";
   static size_t constexpr asciipxl_scale_len = sizeof(asciipxl_scale) - 1;
 
   if (desired_out_width == 0) {

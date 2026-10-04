@@ -90,6 +90,16 @@ int main(int argc, char* argv[argc + 1]) {
   int channels = 0;
 
   unsigned char* pixels = stbi_load(imgpath, &width, &height, &channels, 1);
+
+  if (out_width > width) {
+    out_width = width;
+  }
+
+  // Cap at 50
+  if (out_width > 50) {
+    out_width = 50;
+  }
+
   ascii_art* art =
       ascii_render((size_t)width, (size_t)height, out_width, pixels);
 

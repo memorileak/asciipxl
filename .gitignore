@@ -3,6 +3,8 @@
 !**/*.h
 !.gitignore
 !.clang-format
+!doge.jpg
+!README.md
 
 
 
